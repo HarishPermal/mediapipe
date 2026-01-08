@@ -1,0 +1,3 @@
+tensorflow>=2.16,<2.17
+tensorflow-datasets
+tensorflow-hub

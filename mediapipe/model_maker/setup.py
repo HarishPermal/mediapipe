@@ -37,6 +37,16 @@ def _parse_requirements(path):
         if not (line.isspace() or line.startswith('#'))
     ]
 
+def _dedupe_requirements(requirements):
+  seen = set()
+  deduped = []
+  for req in requirements:
+    if req in seen:
+      continue
+    deduped.append(req)
+    seen.add(req)
+  return deduped
+
 
 def _setup_build_dir():
   """Setup the BUILD_DIR directory to build the mediapipe_model_maker package.
@@ -70,6 +80,26 @@ def _setup_build_dir():
 
 _setup_build_dir()
 
+extras = {
+    'tf2': _parse_requirements('requirements_tf.txt'),
+    'tf2_16': _parse_requirements('requirements_tf_216.txt'),
+    'legacy-keras': _parse_requirements('requirements_legacy_keras.txt'),
+    'vision': _parse_requirements('requirements_vision.txt'),
+    'text': _parse_requirements('requirements_text.txt'),
+    'garden': _parse_requirements('requirements_garden.txt'),
+    'garden-no-deps': _parse_requirements('requirements_garden_no_deps.txt'),
+}
+extras['all'] = _dedupe_requirements(
+    extras['tf2'] + extras['vision'] + extras['text'] + extras['garden']
+)
+extras['all-tf216'] = _dedupe_requirements(
+    extras['tf2_16']
+    + extras['legacy-keras']
+    + extras['vision']
+    + extras['text']
+    + extras['garden-no-deps']
+)
+
 setuptools.setup(
     name='mediapipe-model-maker',
     version=__version__,
@@ -82,6 +112,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where=SRC_NAME),
     package_dir={'': SRC_NAME},
     install_requires=_parse_requirements('requirements.txt'),
+    extras_require=extras,
     include_package_data=True,
     classifiers=[
         'Development Status :: 3 - Alpha',

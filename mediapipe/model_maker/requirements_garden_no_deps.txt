@@ -1,0 +1,1 @@
+tf-models-no-deps>=2.16.0

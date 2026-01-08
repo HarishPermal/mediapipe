@@ -17,9 +17,17 @@ import enum
 from typing import Mapping, Sequence
 
 import tensorflow as tf
-import tensorflow_text as tf_text
+try:
+  import tensorflow_text as tf_text
+except ImportError as exc:
+  tf_text = None
+  _TF_TEXT_IMPORT_ERROR = exc
 
-from official.nlp.tools import tokenization
+try:
+  from official.nlp.tools import tokenization
+except ImportError as exc:
+  tokenization = None
+  _TF_MODELS_IMPORT_ERROR = exc
 
 
 @enum.unique
@@ -50,6 +58,12 @@ class BertFullTokenizer(BertTokenizer):
   name = "fulltokenizer"
 
   def __init__(self, vocab_file: str, do_lower_case: bool, seq_len: int):
+    if tokenization is None:
+      raise ImportError(
+          "tensorflow-models is required for FullTokenizer. Install with "
+          "`pip install mediapipe-model-maker[garden]` or "
+          "`pip install mediapipe-model-maker[garden-no-deps]`."
+      ) from _TF_MODELS_IMPORT_ERROR
     self._tokenizer = tokenization.FullTokenizer(
         vocab_file=vocab_file, do_lower_case=do_lower_case
     )
@@ -92,6 +106,11 @@ class BertFastTokenizer(BertTokenizer):
   name = "fastberttokenizer"
 
   def __init__(self, vocab_file: str, do_lower_case: bool, seq_len: int):
+    if tf_text is None:
+      raise ImportError(
+          "tensorflow-text is required for FastBertTokenizer. Install with "
+          "`pip install mediapipe-model-maker[text]`."
+      ) from _TF_TEXT_IMPORT_ERROR
     with tf.io.gfile.GFile(vocab_file, "r") as f:
       vocab = f.read().splitlines()
     self._tokenizer = tf_text.FastBertTokenizer(

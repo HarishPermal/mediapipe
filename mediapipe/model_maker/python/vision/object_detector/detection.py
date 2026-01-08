@@ -15,7 +15,11 @@
 
 from typing import Any, Mapping
 
-from official.vision.serving import detection
+try:
+  from official.vision.serving import detection
+except ImportError as exc:
+  detection = None
+  _TF_MODELS_IMPORT_ERROR = exc
 
 
 class DetectionModule(detection.DetectionModule):
@@ -26,6 +30,12 @@ class DetectionModule(detection.DetectionModule):
   """
 
   def serve(self, images) -> Mapping[str, Any]:
+    if detection is None:
+      raise ImportError(
+          "tensorflow-models is required for object detection serving. Install "
+          "with `pip install mediapipe-model-maker[garden]` or "
+          "`pip install mediapipe-model-maker[garden-no-deps]`."
+      ) from _TF_MODELS_IMPORT_ERROR
     result = super().serve(images)
     final_outputs = {
         'detection_boxes': result['detection_boxes'],
