@@ -35,6 +35,7 @@ MP_DISABLE_GPU = os.environ.get('MEDIAPIPE_DISABLE_GPU') != '0'
 MP_ENABLE_ODML_CONVERTER = (
     os.environ.get('MEDIAPIPE_ENABLE_ODML_CONVERTER', '0') == '1'
 )
+MP_CXX_STANDARD = os.environ.get('MEDIAPIPE_CXX_STANDARD', 'c++17')
 IS_WINDOWS = (platform.system() == 'Windows')
 IS_MAC = (platform.system() == 'Darwin')
 MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -254,6 +255,8 @@ class BuildExtension(build_ext.build_ext):
         'build',
         '--compilation_mode=opt',
         '--copt=-DNDEBUG',
+        '--cxxopt=-std=%s' % MP_CXX_STANDARD,
+        '--host_cxxopt=-std=%s' % MP_CXX_STANDARD,
         '--keep_going',
         '--define=ENABLE_ODML_CONVERTER=%d' % int(MP_ENABLE_ODML_CONVERTER),
         str(ext.bazel_target),
