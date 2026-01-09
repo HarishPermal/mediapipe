@@ -21,7 +21,7 @@ import shutil
 import setuptools
 
 
-__version__ = 'dev'
+__version__ = '0.0.0.dev0'
 MM_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 # Build dir to copy all necessary files and build package
 SRC_NAME = 'pip_src'
@@ -62,13 +62,16 @@ def _setup_build_dir():
   # Copy python source code into BUILD_DIR
   if os.path.exists(BUILD_DIR):
     shutil.rmtree(BUILD_DIR)
-  python_files = glob.glob('python/**/*.py', recursive=True)
-  python_files.append('__init__.py')
+  python_files = glob.glob(
+        os.path.join(MM_ROOT_PATH, 'python/**/*.py'), recursive=True
+    )
+  python_files.append(os.path.join(MM_ROOT_PATH, '__init__.py'))
   for python_file in python_files:
     # Exclude test files from pip package
     if '_test.py' in python_file:
       continue
-    build_target_file = os.path.join(BUILD_MM_DIR, python_file)
+    rel_python_file = os.path.relpath(python_file, MM_ROOT_PATH)
+    build_target_file = os.path.join(BUILD_MM_DIR, rel_python_file)
     with open(python_file, 'r') as file:
       filedata = file.read()
     # Rename all mediapipe.model_maker imports to mediapipe_model_maker
@@ -112,6 +115,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where=SRC_NAME),
     package_dir={'': SRC_NAME},
     install_requires=_parse_requirements('requirements.txt'),
+    extras_require=extras,
     extras_require=extras,
     include_package_data=True,
     classifiers=[
