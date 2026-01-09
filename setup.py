@@ -32,6 +32,9 @@ from setuptools.command import install
 
 __version__ = '0.0.0.dev0'
 MP_DISABLE_GPU = os.environ.get('MEDIAPIPE_DISABLE_GPU') != '0'
+MP_ENABLE_ODML_CONVERTER = (
+    os.environ.get('MEDIAPIPE_ENABLE_ODML_CONVERTER', '0') == '1'
+)
 IS_WINDOWS = (platform.system() == 'Windows')
 IS_MAC = (platform.system() == 'Darwin')
 MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
