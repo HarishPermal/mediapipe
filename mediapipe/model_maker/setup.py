@@ -116,7 +116,6 @@ setuptools.setup(
     package_dir={'': SRC_NAME},
     install_requires=_parse_requirements('requirements.txt'),
     extras_require=extras,
-    extras_require=extras,
     include_package_data=True,
     classifiers=[
         'Development Status :: 3 - Alpha',
