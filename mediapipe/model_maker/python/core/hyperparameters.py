@@ -19,7 +19,44 @@ from typing import Mapping, Optional
 
 import tensorflow as tf
 
-from official.common import distribute_utils
+try:
+  from official.common import distribute_utils as _distribute_utils
+except ImportError as exc:
+  _distribute_utils = None
+  _DISTRIBUTE_UTILS_IMPORT_ERROR = exc
+
+
+def _get_distribution_strategy(
+    distribution_strategy: str, num_gpus: int, tpu_address: str
+) -> tf.distribute.Strategy:
+  if _distribute_utils is not None:
+    return _distribute_utils.get_distribution_strategy(
+        distribution_strategy=distribution_strategy,
+        num_gpus=num_gpus,
+        tpu_address=tpu_address,
+    )
+
+  strategy = distribution_strategy.lower()
+  if strategy in ('off', 'default'):
+    return tf.distribute.get_strategy()
+  if strategy == 'one_device':
+    device = '/gpu:0' if num_gpus > 0 else '/cpu:0'
+    return tf.distribute.OneDeviceStrategy(device)
+  if strategy == 'mirrored':
+    return tf.distribute.MirroredStrategy()
+  if strategy == 'tpu':
+    resolver = tf.distribute.cluster_resolver.TPUClusterResolver(
+        tpu=tpu_address or None
+    )
+    tf.tpu.experimental.initialize_tpu_system(resolver)
+    return tf.distribute.TPUStrategy(resolver)
+
+  raise ImportError(
+      "tensorflow-models is required for distribution strategy "
+      f"'{distribution_strategy}'. Install with "
+      "`pip install mediapipe-model-maker[garden]` or "
+      "`pip install mediapipe-model-maker[garden-no-deps]`."
+  ) from _DISTRIBUTE_UTILS_IMPORT_ERROR
 
 
 @dataclasses.dataclass
@@ -80,7 +117,7 @@ class BaseHParams:
   _strategy: tf.distribute.Strategy = dataclasses.field(init=False)
 
   def __post_init__(self):
-    self._strategy = distribute_utils.get_distribution_strategy(
+    self._strategy = _get_distribution_strategy(
         distribution_strategy=self.distribution_strategy,
         num_gpus=self.num_gpus,
         tpu_address=self.tpu,
