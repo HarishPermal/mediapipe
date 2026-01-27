@@ -1,11 +1,11 @@
 absl-py
-numpy<2
+keras>=3.10.0
+mediapipe>=0.10.32
+numpy>=1.26.0
 opencv-python
 setuptools==70.3.0 # needed due to https://github.com/pypa/setuptools/issues/4487
-tensorflow>=2.10,<2.16
-tensorflow-addons
-tensorflow-datasets
-tensorflow-hub
-tensorflow-model-optimization<0.8.0
-tensorflow-text
-tf-models-official>=2.13.2,<2.16.0
+tensorflow>=2.20.0
+tensorflow-datasets>=4.9.9
+tensorflow-hub>=0.16.1
+tensorflow-text>=2.19.0
+tf-models-official>=2.19.1

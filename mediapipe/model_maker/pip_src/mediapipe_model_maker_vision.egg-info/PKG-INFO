@@ -1,0 +1,43 @@
+Metadata-Version: 2.4
+Name: mediapipe-model-maker-vision
+Version: 0.10.32
+Summary: MediaPipe Model Maker Vision package without text dependencies
+Home-page: https://github.com/google/mediapipe/tree/master/mediapipe/model_maker
+Author: The MediaPipe Authors
+Author-email: mediapipe@google.com
+License: Apache 2.0
+Keywords: mediapipe,model,maker,vision
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Topic :: Scientific/Engineering
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: Software Development
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Description-Content-Type: text/markdown
+Requires-Dist: absl-py
+Requires-Dist: keras>=3.10.0
+Requires-Dist: mediapipe>=0.10.32
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: opencv-python
+Requires-Dist: tensorflow<2.20.0,>=2.19.0
+Requires-Dist: tensorflow-hub>=0.16.1
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: requires-dist
+Dynamic: summary

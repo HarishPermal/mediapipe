@@ -21,8 +21,22 @@ import shutil
 import setuptools
 
 
-__version__ = 'dev'
 MM_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+
+def _read_mediapipe_version():
+  version_bzl = os.path.join(os.path.dirname(MM_ROOT_PATH), 'version.bzl')
+  try:
+    with open(version_bzl) as f:
+      for line in f:
+        if line.strip().startswith('MEDIAPIPE_FULL_VERSION'):
+          return line.split('=')[1].strip().strip('"')
+  except OSError:
+    pass
+  return '0.0.0'
+
+
+__version__ = _read_mediapipe_version()
 # Build dir to copy all necessary files and build package
 SRC_NAME = 'pip_src'
 BUILD_DIR = os.path.join(MM_ROOT_PATH, SRC_NAME)

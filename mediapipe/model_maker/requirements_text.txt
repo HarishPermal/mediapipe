@@ -1,0 +1,8 @@
+absl-py
+mediapipe>=0.10.32
+numpy>=1.26.0
+tensorflow>=2.19.0,<2.20.0
+tensorflow-datasets>=4.9.9
+tensorflow-hub>=0.16.1
+tensorflow-text>=2.19.0,<2.20.0
+tf-models-official>=2.19.1,<2.20.0

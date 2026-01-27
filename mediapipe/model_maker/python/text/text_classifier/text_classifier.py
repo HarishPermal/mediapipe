@@ -19,7 +19,7 @@ import tempfile
 from typing import Any, Optional, Sequence, Tuple
 
 import tensorflow as tf
-from tensorflow_addons import optimizers as tfa_optimizers
+import keras
 import tensorflow_hub as hub
 
 from mediapipe.model_maker.python.core.data import dataset as ds
@@ -39,6 +39,30 @@ from mediapipe.model_maker.python.text.text_classifier import preprocessor
 from mediapipe.model_maker.python.text.text_classifier import text_classifier_options
 from mediapipe.tasks.python.metadata.metadata_writers import metadata_writer
 from mediapipe.tasks.python.metadata.metadata_writers import text_classifier as text_classifier_writer
+
+
+def _create_adamw(learning_rate, weight_decay, epsilon, global_clipnorm):
+  return keras.optimizers.AdamW(
+      learning_rate=learning_rate,
+      weight_decay=weight_decay,
+      epsilon=epsilon,
+      global_clipnorm=global_clipnorm,
+  )
+
+
+def _create_lamb(learning_rate, weight_decay, epsilon, global_clipnorm):
+  if not hasattr(keras.optimizers, "Lamb"):
+    raise ImportError(
+        "LAMB optimizer requires keras>=3.1.0. "
+        "Upgrade keras or use BertOptimizer.ADAMW."
+    )
+  return keras.optimizers.Lamb(
+      learning_rate=learning_rate,
+      weight_decay=weight_decay,
+      epsilon=epsilon,
+      global_clipnorm=global_clipnorm,
+      exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"],
+  )
 
 
 def _validate(options: text_classifier_options.TextClassifierOptions):
@@ -479,11 +503,10 @@ class _BertClassifier(TextClassifier):
     with bert_classifier._hparams.get_strategy().scope():
       bert_classifier._create_model()
       # create dummy optimizer so model compiles
-      bert_classifier._optimizer = tfa_optimizers.LAMB(
+      bert_classifier._optimizer = _create_lamb(
           3e-4,
-          weight_decay_rate=bert_classifier._hparams.weight_decay,
+          weight_decay=bert_classifier._hparams.weight_decay,
           epsilon=1e-6,
-          exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"],
           global_clipnorm=1.0,
       )
       bert_classifier._model = tf.keras.models.load_model(
@@ -817,26 +840,26 @@ class _BertClassifier(TextClassifier):
           warmup_steps=warmup_steps,
       )
     if self._hparams.optimizer == hp.BertOptimizer.ADAMW:
-      self._optimizer = tf.keras.optimizers.experimental.AdamW(
-          lr_schedule,
+      self._optimizer = _create_adamw(
+          learning_rate=lr_schedule,
           weight_decay=self._hparams.weight_decay,
           epsilon=1e-6,
           global_clipnorm=1.0,
       )
-      self._optimizer.exclude_from_weight_decay(
-          var_names=["LayerNorm", "layer_norm", "bias"]
-      )
+      if hasattr(self._optimizer, "exclude_from_weight_decay"):
+        self._optimizer.exclude_from_weight_decay(
+            var_names=["LayerNorm", "layer_norm", "bias"]
+        )
     elif self._hparams.optimizer == hp.BertOptimizer.LAMB:
-      self._optimizer = tfa_optimizers.LAMB(
-          lr_schedule,
-          weight_decay_rate=self._hparams.weight_decay,
+      self._optimizer = _create_lamb(
+          learning_rate=lr_schedule,
+          weight_decay=self._hparams.weight_decay,
           epsilon=1e-6,
-          exclude_from_weight_decay=["LayerNorm", "layer_norm", "bias"],
           global_clipnorm=1.0,
       )
     else:
       raise ValueError(
-          "BertHParams.optimizer must be set to ADAM or "
+          "BertHParams.optimizer must be set to ADAMW or "
           f"LAMB. Got {self._hparams.optimizer}."
       )
 

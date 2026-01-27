@@ -25,9 +25,14 @@ from mediapipe.model_maker.python.core.utils import model_util
 from mediapipe.model_maker.python.vision.gesture_recognizer import constants
 from mediapipe.model_maker.python.vision.gesture_recognizer import gesture_recognizer_options
 from mediapipe.model_maker.python.vision.gesture_recognizer import hyperparameters as hp
-from mediapipe.model_maker.python.vision.gesture_recognizer import metadata_writer
 from mediapipe.model_maker.python.vision.gesture_recognizer import model_options as model_opt
-from mediapipe.tasks.python.metadata.metadata_writers import metadata_writer as base_metadata_writer
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from mediapipe.model_maker.python.vision.gesture_recognizer import metadata_writer
+  from mediapipe.tasks.python.metadata.metadata_writers import (
+      metadata_writer as base_metadata_writer,
+  )
 
 _EMBEDDING_SIZE = 128
 
@@ -213,6 +218,20 @@ class GestureRecognizer(classifier.Classifier):
       tf.io.gfile.makedirs(self._hparams.export_dir)
     model_bundle_file = os.path.join(self._hparams.export_dir, model_name)
     metadata_file = os.path.join(self._hparams.export_dir, 'metadata.json')
+
+    try:
+      from mediapipe.model_maker.python.vision.gesture_recognizer import (
+          metadata_writer,
+      )
+      from mediapipe.tasks.python.metadata.metadata_writers import (
+          metadata_writer as base_metadata_writer,
+      )
+    except ImportError as e:
+      raise ImportError(
+          "MediaPipe metadata writers are unavailable. "
+          "Install a MediaPipe build that includes tasks.cc or "
+          "skip metadata export."
+      ) from e
 
     gesture_classifier_options = metadata_writer.GestureClassifierOptions(
         model_buffer=model_util.convert_to_tflite(self._model),

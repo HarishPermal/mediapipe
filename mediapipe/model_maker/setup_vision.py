@@ -1,0 +1,163 @@
+"""Copyright 2020-2022 The MediaPipe Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Setup for Mediapipe-Model-Maker-Vision package with setuptools.
+"""
+
+import glob
+import os
+import shutil
+import setuptools
+
+
+MM_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+
+def _read_mediapipe_version():
+  version_bzl = os.path.join(os.path.dirname(MM_ROOT_PATH), "version.bzl")
+  try:
+    with open(version_bzl) as f:
+      for line in f:
+        if line.strip().startswith("MEDIAPIPE_FULL_VERSION"):
+          return line.split("=")[1].strip().strip('"')
+  except OSError:
+    pass
+  return "0.0.0"
+
+
+__version__ = _read_mediapipe_version()
+# Build dir to copy all necessary files and build package
+SRC_NAME = "pip_src"
+BUILD_DIR = os.path.join(MM_ROOT_PATH, SRC_NAME)
+BUILD_MM_DIR = os.path.join(BUILD_DIR, "mediapipe_model_maker")
+
+
+def _parse_requirements(path):
+  with open(os.path.join(MM_ROOT_PATH, path)) as f:
+    return [
+        line.rstrip()
+        for line in f
+        if not (line.isspace() or line.startswith("#"))
+    ]
+
+
+def _is_text_module(path: str) -> bool:
+  return path.startswith("python/text/")
+
+
+def _is_object_detector_module(path: str) -> bool:
+  return path.startswith("python/vision/object_detector/")
+
+
+def _setup_build_dir():
+  """Setup the BUILD_DIR directory to build the mediapipe_model_maker package.
+
+  We need to create a new BUILD_DIR directory because any references to the path
+  `mediapipe/model_maker` needs to be renamed to `mediapipe_model_maker` to
+  avoid conflicting with the mediapipe package name.
+  This setup function performs the following actions:
+  1. Copy python source code into BUILD_DIR and rename imports to
+    mediapipe_model_maker
+  2. Exclude text modules for vision-only package
+  """
+  # Clean previous build artifacts.
+  build_root = os.path.join(MM_ROOT_PATH, "build")
+  if os.path.exists(build_root):
+    shutil.rmtree(build_root)
+
+  # Copy python source code into BUILD_DIR
+  if os.path.exists(BUILD_DIR):
+    shutil.rmtree(BUILD_DIR)
+  python_files = glob.glob("python/**/*.py", recursive=True)
+  python_files.append("__init__.py")
+  for python_file in python_files:
+    # Exclude test files from pip package
+    if "_test.py" in python_file:
+      continue
+    if _is_text_module(python_file) or _is_object_detector_module(python_file):
+      continue
+    build_target_file = os.path.join(BUILD_MM_DIR, python_file)
+    with open(python_file, "r") as file:
+      filedata = file.read()
+    # Rename all mediapipe.model_maker imports to mediapipe_model_maker
+    filedata = filedata.replace(
+        "from mediapipe.model_maker", "from mediapipe_model_maker"
+    )
+    os.makedirs(os.path.dirname(build_target_file), exist_ok=True)
+    with open(build_target_file, "w") as file:
+      file.write(filedata)
+
+  # Remove text/object detector exports from top-level __init__ for vision build.
+  init_path = os.path.join(BUILD_MM_DIR, "__init__.py")
+  if os.path.exists(init_path):
+    with open(init_path, "r") as file:
+      filedata = file.read()
+    filtered = []
+    for line in filedata.splitlines():
+      if (
+          "model_maker.python.text" in line
+          or " text_classifier" in line
+          or "object_detector" in line
+      ):
+        continue
+      filtered.append(line)
+    with open(init_path, "w") as file:
+      file.write("\n".join(filtered) + "\n")
+
+  # Ensure excluded directories are removed if present.
+  for rel_path in ("python/text", "python/vision/object_detector"):
+    abs_path = os.path.join(BUILD_MM_DIR, rel_path)
+    if os.path.exists(abs_path):
+      shutil.rmtree(abs_path)
+
+
+_setup_build_dir()
+
+setuptools.setup(
+    name="mediapipe-model-maker-vision",
+    version=__version__,
+    url="https://github.com/google/mediapipe/tree/master/mediapipe/model_maker",
+    description=(
+        "MediaPipe Model Maker Vision package without text dependencies"
+    ),
+    author="The MediaPipe Authors",
+    author_email="mediapipe@google.com",
+    long_description="",
+    long_description_content_type="text/markdown",
+    packages=setuptools.find_packages(where=SRC_NAME),
+    package_dir={"": SRC_NAME},
+    install_requires=_parse_requirements("requirements_vision.txt"),
+    include_package_data=True,
+    classifiers=[
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Developers",
+        "Intended Audience :: Education",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3 :: Only",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    license="Apache 2.0",
+    keywords=["mediapipe", "model", "maker", "vision"],
+)

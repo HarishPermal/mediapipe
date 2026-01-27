@@ -29,8 +29,13 @@ from mediapipe.model_maker.python.vision.image_classifier import hyperparameters
 from mediapipe.model_maker.python.vision.image_classifier import image_classifier_options
 from mediapipe.model_maker.python.vision.image_classifier import model_options as model_opt
 from mediapipe.model_maker.python.vision.image_classifier import model_spec as ms
-from mediapipe.tasks.python.metadata.metadata_writers import image_classifier as image_classifier_writer
-from mediapipe.tasks.python.metadata.metadata_writers import metadata_writer
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+  from mediapipe.tasks.python.metadata.metadata_writers import (
+      image_classifier as image_classifier_writer,
+  )
+  from mediapipe.tasks.python.metadata.metadata_writers import metadata_writer
 
 
 class ImageClassifier(classifier.Classifier):
@@ -381,6 +386,19 @@ class ImageClassifier(classifier.Classifier):
         model=self._model,
         quantization_config=quantization_config,
         preprocess=self._preprocess)
+    try:
+      from mediapipe.tasks.python.metadata.metadata_writers import (
+          image_classifier as image_classifier_writer,
+      )
+      from mediapipe.tasks.python.metadata.metadata_writers import (
+          metadata_writer,
+      )
+    except ImportError as e:
+      raise ImportError(
+          "MediaPipe metadata writers are unavailable. "
+          "Install a MediaPipe build that includes tasks.cc or "
+          "skip metadata export."
+      ) from e
     writer = image_classifier_writer.MetadataWriter.create(
         tflite_model,
         self._model_spec.mean_rgb,

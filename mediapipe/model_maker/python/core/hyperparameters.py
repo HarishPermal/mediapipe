@@ -19,7 +19,7 @@ from typing import Mapping, Optional
 
 import tensorflow as tf
 
-from official.common import distribute_utils
+from mediapipe.model_maker.python.core.utils import distribute_utils
 
 
 @dataclasses.dataclass

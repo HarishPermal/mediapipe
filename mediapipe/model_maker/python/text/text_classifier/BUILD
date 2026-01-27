@@ -204,8 +204,8 @@ py_library(
         "//mediapipe/model_maker/python/core/utils:quantization",
         "//mediapipe/tasks/python/metadata/metadata_writers:metadata_writer",
         "//mediapipe/tasks/python/metadata/metadata_writers:text_classifier",
+        "@model_maker_pip_deps_keras//:pkg",
         "@model_maker_pip_deps_tensorflow//:pkg",
-        "@model_maker_pip_deps_tensorflow_addons//:pkg",
         "@model_maker_pip_deps_tensorflow_hub//:pkg",
     ],
 )

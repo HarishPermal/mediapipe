@@ -23,10 +23,15 @@ import tensorflow as tf
 
 from mediapipe.model_maker.python.core.utils import file_util
 from mediapipe.model_maker.python.core.utils import model_util
-from official.modeling import tf_utils
 
 
 _VGG_IMAGENET_PERCEPTUAL_MODEL_URL = 'https://storage.googleapis.com/mediapipe-assets/vgg_feature_extractor.tar.gz'
+
+
+def _safe_mean(value: tf.Tensor) -> tf.Tensor:
+  value = tf.convert_to_tensor(value)
+  count = tf.cast(tf.size(value), value.dtype)
+  return tf.math.divide_no_nan(tf.reduce_sum(value), count)
 
 
 class MaskedBinaryCrossentropy(tf.keras.losses.BinaryCrossentropy):
@@ -277,7 +282,7 @@ class ImagePerceptualQualityLoss(tf.keras.losses.Loss):
       loss_value.append(vgg_loss_value)
     if self._loss_weight.l1 > 0:
       l1_loss = self._l1_loss(reduction=self._reduction)(img1, img2)
-      l1_loss_value = tf_utils.safe_mean(l1_loss * self._loss_weight.l1)
+      l1_loss_value = _safe_mean(l1_loss * self._loss_weight.l1)
       loss_value.append(l1_loss_value)
     total_loss = tf.math.add_n(loss_value)
     return total_loss
@@ -343,12 +348,12 @@ class PerceptualLoss(tf.keras.Model, metaclass=abc.ABCMeta):
       )
 
     if self._loss_weight.style > 0.0:
-      self._loss_style = tf_utils.safe_mean(
+      self._loss_style = _safe_mean(
           self._loss_weight.style
           * self._get_style_loss(x_feats=x_features, y_feats=y_features)
       )
     if self._loss_weight.content > 0.0:
-      self._loss_content = tf_utils.safe_mean(
+      self._loss_content = _safe_mean(
           self._loss_weight.content
           * self._get_content_loss(x_feats=x_features, y_feats=y_features)
       )

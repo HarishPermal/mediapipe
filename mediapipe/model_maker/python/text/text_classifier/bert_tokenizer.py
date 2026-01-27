@@ -17,7 +17,11 @@ import enum
 from typing import Mapping, Sequence
 
 import tensorflow as tf
-import tensorflow_text as tf_text
+
+try:
+  import tensorflow_text as tf_text
+except ImportError:  # Optional dependency for fast tokenization.
+  tf_text = None
 
 from official.nlp.tools import tokenization
 
@@ -92,6 +96,12 @@ class BertFastTokenizer(BertTokenizer):
   name = "fastberttokenizer"
 
   def __init__(self, vocab_file: str, do_lower_case: bool, seq_len: int):
+    if tf_text is None:
+      raise ImportError(
+          "tensorflow-text is required for BertFastTokenizer. "
+          "Install tensorflow-text or use SupportedBertTokenizers.FULL_TOKENIZER. "
+          "Note: tensorflow-text does not currently publish Python 3.13 wheels."
+      )
     with tf.io.gfile.GFile(vocab_file, "r") as f:
       vocab = f.read().splitlines()
     self._tokenizer = tf_text.FastBertTokenizer(
