@@ -29,8 +29,6 @@ import setuptools
 from setuptools.command import build_ext
 from setuptools.command import build_py
 from setuptools.command import install
-
-__version__ = 'dev'
 MP_DISABLE_GPU = os.environ.get('MEDIAPIPE_DISABLE_GPU') != '0'
 IS_WINDOWS = (platform.system() == 'Windows')
 IS_MAC = (platform.system() == 'Darwin')
@@ -38,6 +36,18 @@ MP_ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
 MP_DIR_INIT_PY = os.path.join(MP_ROOT_PATH, 'mediapipe/__init__.py')
 MP_THIRD_PARTY_BUILD = os.path.join(MP_ROOT_PATH, 'third_party/BUILD')
 MP_ROOT_INIT_PY = os.path.join(MP_ROOT_PATH, '__init__.py')
+
+
+def _read_version():
+  version_file = os.path.join(MP_ROOT_PATH, 'mediapipe', 'version.bzl')
+  with open(version_file, 'r') as f:
+    for line in f:
+      if line.startswith('MEDIAPIPE_FULL_VERSION'):
+        return line.split('=')[1].strip().strip('"')
+  return 'dev'
+
+
+__version__ = _read_version()
 
 GPU_OPTIONS_DISABLED = ['--define=MEDIAPIPE_DISABLE_GPU=1']
 GPU_OPTIONS_ENABLED = [
@@ -412,3 +422,13 @@ setuptools.setup(
     license='Apache 2.0',
     keywords='mediapipe',
 )
+def _read_version():
+  version_file = os.path.join(MP_ROOT_PATH, 'mediapipe', 'version.bzl')
+  with open(version_file, 'r') as f:
+    for line in f:
+      if line.startswith('MEDIAPIPE_FULL_VERSION'):
+        return line.split('=')[1].strip().strip('"')
+  return 'dev'
+
+
+__version__ = _read_version()

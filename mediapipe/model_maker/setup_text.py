@@ -52,6 +52,10 @@ def _parse_requirements(path):
     ]
 
 
+def _is_vision_module(path: str) -> bool:
+  return path.startswith("python/vision/")
+
+
 def _setup_build_dir():
   """Setup the BUILD_DIR directory to build the mediapipe_model_maker package.
 
@@ -61,8 +65,14 @@ def _setup_build_dir():
   This setup function performs the following actions:
   1. Copy python source code into BUILD_DIR and rename imports to
     mediapipe_model_maker
+  2. Exclude vision modules for text-only package
   2. Download models from GCS into BUILD_DIR
   """
+  # Clean previous build artifacts.
+  build_root = os.path.join(MM_ROOT_PATH, "build")
+  if os.path.exists(build_root):
+    shutil.rmtree(build_root)
+
   # Copy python source code into BUILD_DIR
   if os.path.exists(BUILD_DIR):
     shutil.rmtree(BUILD_DIR)
@@ -71,6 +81,8 @@ def _setup_build_dir():
   for python_file in python_files:
     # Exclude test files from pip package
     if "_test.py" in python_file:
+      continue
+    if _is_vision_module(python_file):
       continue
     build_target_file = os.path.join(BUILD_MM_DIR, python_file)
     with open(python_file, "r") as file:
@@ -82,6 +94,25 @@ def _setup_build_dir():
     os.makedirs(os.path.dirname(build_target_file), exist_ok=True)
     with open(build_target_file, "w") as file:
       file.write(filedata)
+
+  # Remove vision exports from top-level __init__ for text build.
+  init_path = os.path.join(BUILD_MM_DIR, "__init__.py")
+  if os.path.exists(init_path):
+    with open(init_path, "r") as file:
+      filedata = file.read()
+    filtered = []
+    for line in filedata.splitlines():
+      if "model_maker.python.vision" in line or "image_utils" in line:
+        continue
+      filtered.append(line)
+    with open(init_path, "w") as file:
+      file.write("\n".join(filtered) + "\n")
+
+  # Ensure excluded directories are removed if present.
+  rel_path = "python/vision"
+  abs_path = os.path.join(BUILD_MM_DIR, rel_path)
+  if os.path.exists(abs_path):
+    shutil.rmtree(abs_path)
 
 
 _setup_build_dir()

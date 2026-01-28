@@ -11,10 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import mediapipe.tasks.python as tasks
-from mediapipe.tasks.python.vision.core.image import Image
-from mediapipe.tasks.python.vision.core.image import ImageFormat
-
-
-__version__ = '0.10.32'

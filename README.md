@@ -156,3 +156,28 @@ the MediaPipe Stack Overflow with a `mediapipe` tag.
 ### Videos
 
 *   [YouTube Channel](https://www.youtube.com/c/MediaPipe)
+
+
+source /usr/local/google/home/hharishppp/Documents/MediaPipe_demo/model_maker_test/.venv/bin/activate
+
+You’ve got a hard version conflict: mediapipe-model-maker 0.10.32 requires tensorflow>=2.20.0, while tensorflow-text 2.19.0 requires tensorflow<2.20. Those can’t coexist in one environment.
+
+Quick options:
+
+Upgrade tensorflow-text to a version that supports TensorFlow 2.20+.
+Downgrade mediapipe-model-maker to a version compatible with TensorFlow 2.19.x.
+Split into two environments if you need both exact versions.
+Tell me which path you prefer (upgrade TF-text vs. downgrade model-maker), and I can suggest exact versions/commands for your setup.
+
+It’s required for the text pipeline in Model Maker, specifically for fast BERT tokenization and TF Text kernels.
+
+Evidence in this repo:
+
+The Python BERT tokenizer imports tensorflow_text and raises an error if you try to use BertFastTokenizer without it. bert_tokenizer.py
+The text package is explicitly labeled as “with tensorflow-text dependency” and pulls requirements_text.txt, which pins tensorflow-text. setup_text.py, requirements_text.txt
+The C++ text tokenizers depend on TF Text kernels like wordpiece/regex split. mediapipe/mediapipe/tasks/cc/text/tokenizers/BUILD, bert_tokenizer.cc
+Practical takeaway:
+
+If you’re using text tasks (BERT tokenization, text classifiers), tensorflow-text is required.
+If you’re not using text tasks, you may be able to avoid it by installing only the non-text package or by sticking to the “full tokenizer” path (slower, no tensorflow_text).
+If you want, tell me exactly which Model Maker tasks you’re using, and I can suggest how to drop tensorflow-text from your env safely.
