@@ -12,9 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mediapipe.tasks.python as tasks
-from mediapipe.tasks.python.vision.core.image import Image
-from mediapipe.tasks.python.vision.core.image import ImageFormat
+import warnings
+
+try:
+  import mediapipe.tasks.python as tasks
+  from mediapipe.tasks.python.vision.core.image import Image
+  from mediapipe.tasks.python.vision.core.image import ImageFormat
+except Exception as e:  # pragma: no cover - optional tasks dependencies
+  tasks = None
+  Image = None
+  ImageFormat = None
+  warnings.warn(
+      "MediaPipe tasks APIs could not be imported. Some functionality may be "
+      f"unavailable. Original error: {e}",
+      RuntimeWarning,
+  )
 
 
 __version__ = '0.10.32'

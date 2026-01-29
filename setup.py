@@ -143,19 +143,8 @@ def _modify_opencv_cmake_rule(link_opencv):
 def _add_mp_init_files():
   """Add __init__.py to mediapipe root directories to make the subdirectories indexable."""
   open(MP_ROOT_INIT_PY, 'w').close()
-  # Save the original mediapipe/__init__.py file.
-  shutil.copyfile(MP_DIR_INIT_PY, _get_backup_file(MP_DIR_INIT_PY))
-  mp_dir_init_file = open(MP_DIR_INIT_PY, 'a')
-  mp_dir_init_file.writelines([
-      '\n',
-      'import mediapipe.tasks.python as tasks\n',
-      'from mediapipe.tasks.python.vision.core.image import Image\n',
-      'from mediapipe.tasks.python.vision.core.image import ImageFormat\n',
-      '\n\n',
-      "__version__ = '{}'".format(__version__),
-      '\n',
-  ])
-  mp_dir_init_file.close()
+  # Keep mediapipe/__init__.py intact to avoid import-time failures when
+  # optional task modules are unavailable.
 
 
 def _copy_to_build_lib_dir(build_lib, file):
