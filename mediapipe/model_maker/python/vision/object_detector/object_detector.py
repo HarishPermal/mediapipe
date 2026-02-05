@@ -290,8 +290,9 @@ class ObjectDetector(classifier.Classifier):
       self,
       model_name: str = 'model.tflite',
       quantization_config: Optional[quantization.QuantizationConfig] = None,
+      include_metadata: bool = True,
   ):
-    """Converts and saves the model to a TFLite file with metadata included.
+    """Converts and saves the model to a TFLite file.
 
     The model export format is automatically set based on whether or not
     `quantization_aware_training`(QAT) was run. The model exports to float32 by
@@ -300,9 +301,10 @@ class ObjectDetector(classifier.Classifier):
     method. For custom post-training quantization without QAT, use the
     quantization_config parameter.
 
-    Note that only the TFLite file is needed for deployment. This function also
-    saves a metadata.json file to the same directory as the TFLite file which
-    can be used to interpret the metadata content in the TFLite file.
+    Note that only the TFLite file is needed for deployment. When
+    include_metadata is True, this function also saves a metadata.json file to
+    the same directory as the TFLite file which can be used to interpret the
+    metadata content in the TFLite file.
 
     Args:
       model_name: File name to save TFLite model with metadata. The full export
@@ -311,6 +313,8 @@ class ObjectDetector(classifier.Classifier):
         int8 quantization aware training is automatically applied when possible.
         This parameter is used to specify other post-training quantization
         options such as fp16 and int8 without QAT.
+      include_metadata: Whether to populate metadata. Set False when the
+        mediapipe.tasks.cc native bindings are unavailable.
 
     Raises:
       ValueError: If a custom quantization_config is specified when the model
@@ -349,6 +353,9 @@ class ObjectDetector(classifier.Classifier):
 
       converter.target_spec.supported_ops = (tf.lite.OpsSet.TFLITE_BUILTINS,)
       tflite_model = converter.convert()
+    if not include_metadata:
+      model_util.save_tflite(tflite_model, tflite_file)
+      return
 
     # Build anchors
     raw_anchor_boxes = self._preprocessor.anchor_boxes
@@ -385,7 +392,14 @@ class ObjectDetector(classifier.Classifier):
         tensors_decoding_options=tensor_decoding_options,
         output_tensors_order=metadata_info.RawDetectionOutputTensorsOrder.LOCATION_SCORE,
     )
-    tflite_model_with_metadata, metadata_json = writer.populate()
+    try:
+      tflite_model_with_metadata, metadata_json = writer.populate()
+    except RuntimeError as e:
+      raise RuntimeError(
+          "Metadata population failed. This likely means mediapipe.tasks.cc "
+          "is not available. Rebuild MediaPipe with tasks.cc or set "
+          "include_metadata=False."
+      ) from e
     model_util.save_tflite(tflite_model_with_metadata, tflite_file)
     with open(metadata_file, 'w') as f:
       f.write(metadata_json)

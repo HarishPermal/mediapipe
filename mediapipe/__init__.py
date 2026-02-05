@@ -28,5 +28,15 @@ except Exception as e:  # pragma: no cover - optional tasks dependencies
       RuntimeWarning,
   )
 
+try:
+  from mediapipe.python import solutions
+except Exception as e:  # pragma: no cover - optional solutions dependencies
+  solutions = None
+  warnings.warn(
+      "MediaPipe solutions APIs could not be imported. Some functionality may "
+      f"be unavailable. Original error: {e}",
+      RuntimeWarning,
+  )
+
 
 __version__ = '0.10.32'

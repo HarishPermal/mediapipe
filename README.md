@@ -159,6 +159,7 @@ the MediaPipe Stack Overflow with a `mediapipe` tag.
 
 
 source /usr/local/google/home/hharishppp/Documents/MediaPipe_demo/model_maker_test/.venv/bin/activate
+python mediapipe/model_maker/setup_vision.py bdist_wheel
 
 You’ve got a hard version conflict: mediapipe-model-maker 0.10.32 requires tensorflow>=2.20.0, while tensorflow-text 2.19.0 requires tensorflow<2.20. Those can’t coexist in one environment.
 

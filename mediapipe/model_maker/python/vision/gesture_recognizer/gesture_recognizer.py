@@ -14,6 +14,7 @@
 """APIs to train gesture recognizer model."""
 
 import os
+import tempfile
 from typing import List
 
 import tensorflow as tf
@@ -181,7 +182,11 @@ class GestureRecognizer(classifier.Classifier):
 
     print(self._model.summary())
 
-  def export_model(self, model_name: str = 'gesture_recognizer.task'):
+  def export_model(
+      self,
+      model_name: str = 'gesture_recognizer.task',
+      include_metadata: bool = True,
+  ):
     """Converts the model to TFLite and exports as a model bundle file.
 
     Saves a model bundle file and metadata json file to hparams.export_dir. The
@@ -199,6 +204,8 @@ class GestureRecognizer(classifier.Classifier):
     Args:
       model_name: File name to save model bundle file. The full export path is
         {export_dir}/{model_name}.
+      include_metadata: Whether to populate metadata. Set False when the
+        mediapipe.tasks.cc native bindings are unavailable.
     """
     # TODO: Convert keras embedder model instead of using tflite
     gesture_embedding_model_buffer = model_util.load_tflite_model_buffer(
@@ -219,6 +226,53 @@ class GestureRecognizer(classifier.Classifier):
     model_bundle_file = os.path.join(self._hparams.export_dir, model_name)
     metadata_file = os.path.join(self._hparams.export_dir, 'metadata.json')
 
+    if not include_metadata:
+      from mediapipe.model_maker.python.vision.gesture_recognizer import (
+          metadata_writer as gr_metadata_writer,
+      )
+      from mediapipe.tasks.python.metadata.metadata_writers import (
+          model_asset_bundle_utils,
+      )
+      with tempfile.TemporaryDirectory() as temp_dir:
+        hand_landmarker_models = {
+            gr_metadata_writer._HAND_DETECTOR_TFLITE_NAME:
+                hand_detector_model_buffer,
+            gr_metadata_writer._HAND_LANDMARKS_DETECTOR_TFLITE_NAME:
+                hand_landmarks_detector_model_buffer,
+        }
+        hand_landmarker_path = os.path.join(
+            temp_dir, gr_metadata_writer._HAND_LANDMARKER_BUNDLE_NAME
+        )
+        model_asset_bundle_utils.create_model_asset_bundle(
+            hand_landmarker_models, hand_landmarker_path
+        )
+
+        hand_gesture_models = {
+            gr_metadata_writer._GESTURE_EMBEDDER_TFLITE_NAME:
+                gesture_embedding_model_buffer,
+            gr_metadata_writer._CANNED_GESTURE_CLASSIFIER_TFLITE_NAME:
+                canned_gesture_model_buffer,
+            gr_metadata_writer._CUSTOM_GESTURE_CLASSIFIER_TFLITE_NAME:
+                model_util.convert_to_tflite(self._model),
+        }
+        hand_gesture_path = os.path.join(
+            temp_dir, gr_metadata_writer._HAND_GESTURE_RECOGNIZER_BUNDLE_NAME
+        )
+        model_asset_bundle_utils.create_model_asset_bundle(
+            hand_gesture_models, hand_gesture_path
+        )
+
+        gesture_recognizer_models = {
+            gr_metadata_writer._HAND_LANDMARKER_BUNDLE_NAME:
+                model_util.load_tflite_model_buffer(hand_landmarker_path),
+            gr_metadata_writer._HAND_GESTURE_RECOGNIZER_BUNDLE_NAME:
+                model_util.load_tflite_model_buffer(hand_gesture_path),
+        }
+        model_asset_bundle_utils.create_model_asset_bundle(
+            gesture_recognizer_models, model_bundle_file
+        )
+      return
+
     try:
       from mediapipe.model_maker.python.vision.gesture_recognizer import (
           metadata_writer,
@@ -230,7 +284,7 @@ class GestureRecognizer(classifier.Classifier):
       raise ImportError(
           "MediaPipe metadata writers are unavailable. "
           "Install a MediaPipe build that includes tasks.cc or "
-          "skip metadata export."
+          "set include_metadata=False."
       ) from e
 
     gesture_classifier_options = metadata_writer.GestureClassifierOptions(
@@ -243,7 +297,14 @@ class GestureRecognizer(classifier.Classifier):
         hand_detector_model_buffer, hand_landmarks_detector_model_buffer,
         gesture_embedding_model_buffer, canned_gesture_model_buffer,
         gesture_classifier_options)
-    model_bundle_content, metadata_json = writer.populate()
+    try:
+      model_bundle_content, metadata_json = writer.populate()
+    except RuntimeError as e:
+      raise RuntimeError(
+          "Metadata population failed. This likely means mediapipe.tasks.cc "
+          "is not available. Rebuild MediaPipe with tasks.cc or set "
+          "include_metadata=False."
+      ) from e
     with open(model_bundle_file, 'wb') as f:
       f.write(model_bundle_content)
     with open(metadata_file, 'w') as f:

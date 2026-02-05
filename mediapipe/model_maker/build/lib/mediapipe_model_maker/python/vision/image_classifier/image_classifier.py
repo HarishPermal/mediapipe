@@ -16,6 +16,8 @@
 import os
 from typing import List, Optional, Sequence
 
+# Ensure TF Hub uses Keras 3 APIs when available.
+os.environ.setdefault("TFHUB_USE_KERAS_3", "1")
 import tensorflow as tf
 import tensorflow_hub as hub
 
@@ -327,6 +329,13 @@ class ImageClassifier(classifier.Classifier):
               experimental_io_device='/job:localhost'
           ),
       )
+      if not isinstance(module_layer, tf.keras.layers.Layer):
+        raise RuntimeError(
+            "tensorflow_hub.KerasLayer is not compatible with the active Keras "
+            "version. Set TFHUB_USE_KERAS_3=1 before importing TensorFlow/"
+            "tensorflow_hub (restart runtime), or install tf-keras and set "
+            "TF_USE_LEGACY_KERAS=1."
+        )
       self._model = tf.keras.Sequential([
           tf.keras.Input(shape=(image_size[0], image_size[1], 3)),
           module_layer,
@@ -365,17 +374,21 @@ class ImageClassifier(classifier.Classifier):
       self,
       model_name: str = 'model.tflite',
       quantization_config: Optional[quantization.QuantizationConfig] = None,
+      include_metadata: bool = True,
   ):
-    """Converts and saves the model to a TFLite file with metadata included.
+    """Converts and saves the model to a TFLite file.
 
-    Note that only the TFLite file is needed for deployment. This function also
-    saves a metadata.json file to the same directory as the TFLite file which
-    can be used to interpret the metadata content in the TFLite file.
+    Note that only the TFLite file is needed for deployment. When
+    include_metadata is True, this function also saves a metadata.json file to
+    the same directory as the TFLite file which can be used to interpret the
+    metadata content in the TFLite file.
 
     Args:
       model_name: File name to save TFLite model with metadata. The full export
         path is {self._hparams.export_dir}/{model_name}.
       quantization_config: The configuration for model quantization.
+      include_metadata: Whether to populate metadata. Set False when the
+        mediapipe.tasks.cc native bindings are unavailable.
     """
     if not tf.io.gfile.exists(self._hparams.export_dir):
       tf.io.gfile.makedirs(self._hparams.export_dir)
@@ -386,6 +399,10 @@ class ImageClassifier(classifier.Classifier):
         model=self._model,
         quantization_config=quantization_config,
         preprocess=self._preprocess)
+    if not include_metadata:
+      model_util.save_tflite(tflite_model, tflite_file)
+      return
+
     try:
       from mediapipe.tasks.python.metadata.metadata_writers import (
           image_classifier as image_classifier_writer,
@@ -397,14 +414,21 @@ class ImageClassifier(classifier.Classifier):
       raise ImportError(
           "MediaPipe metadata writers are unavailable. "
           "Install a MediaPipe build that includes tasks.cc or "
-          "skip metadata export."
+          "set include_metadata=False."
       ) from e
     writer = image_classifier_writer.MetadataWriter.create(
         tflite_model,
         self._model_spec.mean_rgb,
         self._model_spec.stddev_rgb,
         labels=metadata_writer.Labels().add(list(self._label_names)))
-    tflite_model_with_metadata, metadata_json = writer.populate()
+    try:
+      tflite_model_with_metadata, metadata_json = writer.populate()
+    except RuntimeError as e:
+      raise RuntimeError(
+          "Metadata population failed. This likely means mediapipe.tasks.cc "
+          "is not available. Rebuild MediaPipe with tasks.cc or set "
+          "include_metadata=False."
+      ) from e
     model_util.save_tflite(tflite_model_with_metadata, tflite_file)
     with tf.io.gfile.GFile(metadata_file, 'w') as f:
       f.write(metadata_json)

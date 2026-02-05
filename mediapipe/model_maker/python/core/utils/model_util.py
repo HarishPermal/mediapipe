@@ -43,11 +43,31 @@ def get_default_callbacks(
 
   if checkpoint_frequency > 0:
     checkpoint_path = os.path.join(export_dir, 'checkpoint')
-    checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        os.path.join(checkpoint_path, 'model-{epoch:04d}'),
-        save_weights_only=True,
-        period=checkpoint_frequency,
-    )
+    os.makedirs(checkpoint_path, exist_ok=True)
+
+    if checkpoint_frequency == 1:
+      checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+          os.path.join(checkpoint_path, 'model-{epoch:04d}.weights.h5'),
+          save_weights_only=True,
+          save_freq='epoch',
+      )
+    else:
+      # Keras 3 removed "period"; implement a lightweight periodic saver.
+      class _PeriodicCheckpoint(tf.keras.callbacks.Callback):
+        def __init__(self, freq: int, path_template: str):
+          super().__init__()
+          self._freq = freq
+          self._path_template = path_template
+
+        def on_epoch_end(self, epoch, logs=None):
+          if (epoch + 1) % self._freq == 0:
+            path = self._path_template.format(epoch=epoch + 1)
+            self.model.save_weights(path)
+
+      checkpoint_callback = _PeriodicCheckpoint(
+          checkpoint_frequency,
+          os.path.join(checkpoint_path, 'model-{epoch:04d}.weights.h5'),
+      )
     callbacks.append(checkpoint_callback)
   return callbacks
 

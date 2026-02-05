@@ -18,6 +18,8 @@ import os
 import tempfile
 from typing import Any, Optional, Sequence, Tuple
 
+# Ensure TF Hub uses Keras 3 APIs when available.
+os.environ.setdefault("TFHUB_USE_KERAS_3", "1")
 import tensorflow as tf
 import keras
 import tensorflow_hub as hub
@@ -230,17 +232,21 @@ class TextClassifier(classifier.Classifier):
       self,
       model_name: str = "model.tflite",
       quantization_config: Optional[quantization.QuantizationConfig] = None,
+      include_metadata: bool = True,
   ):
-    """Converts and saves the model to a TFLite file with metadata included.
+    """Converts and saves the model to a TFLite file.
 
-    Note that only the TFLite file is needed for deployment. This function also
-    saves a metadata.json file to the same directory as the TFLite file which
-    can be used to interpret the metadata content in the TFLite file.
+    Note that only the TFLite file is needed for deployment. When
+    include_metadata is True, this function also saves a metadata.json file to
+    the same directory as the TFLite file which can be used to interpret the
+    metadata content in the TFLite file.
 
     Args:
       model_name: File name to save TFLite model with metadata. The full export
         path is {self._hparams.export_dir}/{model_name}.
       quantization_config: The configuration for model quantization.
+      include_metadata: Whether to populate metadata. Set False when the
+        mediapipe.tasks.cc native bindings are unavailable.
     """
     tf.io.gfile.makedirs(self._hparams.export_dir)
     tflite_file = os.path.join(self._hparams.export_dir, model_name)
@@ -252,11 +258,21 @@ class TextClassifier(classifier.Classifier):
     tflite_model = model_util.convert_to_tflite_from_file(
         saved_model_file, quantization_config=quantization_config
     )
+    if not include_metadata:
+      model_util.save_tflite(tflite_model, tflite_file)
+      return
     vocab_filepath = os.path.join(tempfile.mkdtemp(), "vocab.txt")
     self._save_vocab(vocab_filepath)
 
     writer = self._get_metadata_writer(tflite_model, vocab_filepath)
-    tflite_model_with_metadata, metadata_json = writer.populate()
+    try:
+      tflite_model_with_metadata, metadata_json = writer.populate()
+    except RuntimeError as e:
+      raise RuntimeError(
+          "Metadata population failed. This likely means mediapipe.tasks.cc "
+          "is not available. Rebuild MediaPipe with tasks.cc or set "
+          "include_metadata=False."
+      ) from e
     model_util.save_tflite(tflite_model_with_metadata, tflite_file)
     with tf.io.gfile.GFile(metadata_file, "w") as f:
       f.write(metadata_json)
@@ -883,12 +899,14 @@ class _BertClassifier(TextClassifier):
       model_name: str = "model.tflite",
       quantization_config: Optional[quantization.QuantizationConfig] = None,
       batch_size: Optional[int] = None,
+      include_metadata: bool = True,
   ):
-    """Converts and saves the model to a TFLite file with metadata included.
+    """Converts and saves the model to a TFLite file.
 
-    Note that only the TFLite file is needed for deployment. This function also
-    saves a metadata.json file to the same directory as the TFLite file which
-    can be used to interpret the metadata content in the TFLite file.
+    Note that only the TFLite file is needed for deployment. When
+    include_metadata is True, this function also saves a metadata.json file to
+    the same directory as the TFLite file which can be used to interpret the
+    metadata content in the TFLite file.
 
     This override method is needed to disable dynamic sequence length in the
     MediaPipe-wrapped model. See b/361090759 for more info.
@@ -899,6 +917,8 @@ class _BertClassifier(TextClassifier):
       quantization_config: The configuration for model quantization.
       batch_size: Inference batch size to use for the TFlite model. Default is
         None, which means the batch size is dynamic.
+      include_metadata: Whether to populate metadata. Set False when the
+        mediapipe.tasks.cc native bindings are unavailable.
     """
     tf.io.gfile.makedirs(self._hparams.export_dir)
     tflite_file = os.path.join(self._hparams.export_dir, model_name)
@@ -940,11 +960,21 @@ class _BertClassifier(TextClassifier):
     tflite_model = model_util.convert_to_tflite_from_file(
         saved_model_file, quantization_config=quantization_config
     )
+    if not include_metadata:
+      model_util.save_tflite(tflite_model, tflite_file)
+      return
     vocab_filepath = os.path.join(tempfile.mkdtemp(), "vocab.txt")
     self._save_vocab(vocab_filepath)
 
     writer = self._get_metadata_writer(tflite_model, vocab_filepath)
-    tflite_model_with_metadata, metadata_json = writer.populate()
+    try:
+      tflite_model_with_metadata, metadata_json = writer.populate()
+    except RuntimeError as e:
+      raise RuntimeError(
+          "Metadata population failed. This likely means mediapipe.tasks.cc "
+          "is not available. Rebuild MediaPipe with tasks.cc or set "
+          "include_metadata=False."
+      ) from e
     model_util.save_tflite(tflite_model_with_metadata, tflite_file)
     with tf.io.gfile.GFile(metadata_file, "w") as f:
       f.write(metadata_json)

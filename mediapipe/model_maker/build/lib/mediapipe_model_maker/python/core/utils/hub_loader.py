@@ -13,6 +13,10 @@
 # limitations under the License.
 """Handles both V1 and V2 modules."""
 
+import os
+
+# Ensure TF Hub uses Keras 3 APIs when available.
+os.environ.setdefault("TFHUB_USE_KERAS_3", "1")
 import tensorflow_hub as hub
 
 

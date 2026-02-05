@@ -21,6 +21,10 @@ import re
 from typing import Any, Mapping, Sequence, Union
 
 import tensorflow as tf
+import os
+
+# Ensure TF Hub uses Keras 3 APIs when available.
+os.environ.setdefault("TFHUB_USE_KERAS_3", "1")
 import tensorflow_hub
 
 from mediapipe.model_maker.python.core.data import cache_files as cache_files_lib
