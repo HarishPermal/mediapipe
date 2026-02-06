@@ -364,11 +364,10 @@ class ImageClassifier(classifier.Classifier):
     """
     tf.io.gfile.makedirs(self._hparams.export_dir)
     saved_model_file = os.path.join(self._hparams.export_dir, model_name)
-    self._model.save(
-        saved_model_file,
-        include_optimizer=False,
-        save_format='tf',
-    )
+    if hasattr(self._model, "export"):
+      self._model.export(saved_model_file)
+    else:
+      tf.saved_model.save(self._model, saved_model_file)
 
   def export_model(
       self,

@@ -1,7 +1,0 @@
-absl-py
-keras>=3.10.0
-mediapipe>=0.10.32
-numpy>=1.26.0
-opencv-python
-tensorflow<2.20.0,>=2.19.0
-tensorflow-hub>=0.16.1

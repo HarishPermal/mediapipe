@@ -24,21 +24,21 @@ import tensorflow as tf
 import keras
 import tensorflow_hub as hub
 
-from mediapipe.model_maker.python.core.data import dataset as ds
-from mediapipe.model_maker.python.core.tasks import classifier
-from mediapipe.model_maker.python.core.utils import hub_loader
-from mediapipe.model_maker.python.core.utils import loss_functions
-from mediapipe.model_maker.python.core.utils import metrics
-from mediapipe.model_maker.python.core.utils import model_util
-from mediapipe.model_maker.python.core.utils import quantization
-from mediapipe.model_maker.python.text.text_classifier import bert_tokenizer
-from mediapipe.model_maker.python.text.text_classifier import dataset as text_ds
-from mediapipe.model_maker.python.text.text_classifier import hyperparameters as hp
-from mediapipe.model_maker.python.text.text_classifier import model_options as mo
-from mediapipe.model_maker.python.text.text_classifier import model_spec as ms
-from mediapipe.model_maker.python.text.text_classifier import model_with_tokenizer
-from mediapipe.model_maker.python.text.text_classifier import preprocessor
-from mediapipe.model_maker.python.text.text_classifier import text_classifier_options
+from mediapipe_model_maker.python.core.data import dataset as ds
+from mediapipe_model_maker.python.core.tasks import classifier
+from mediapipe_model_maker.python.core.utils import hub_loader
+from mediapipe_model_maker.python.core.utils import loss_functions
+from mediapipe_model_maker.python.core.utils import metrics
+from mediapipe_model_maker.python.core.utils import model_util
+from mediapipe_model_maker.python.core.utils import quantization
+from mediapipe_model_maker.python.text.text_classifier import bert_tokenizer
+from mediapipe_model_maker.python.text.text_classifier import dataset as text_ds
+from mediapipe_model_maker.python.text.text_classifier import hyperparameters as hp
+from mediapipe_model_maker.python.text.text_classifier import model_options as mo
+from mediapipe_model_maker.python.text.text_classifier import model_spec as ms
+from mediapipe_model_maker.python.text.text_classifier import model_with_tokenizer
+from mediapipe_model_maker.python.text.text_classifier import preprocessor
+from mediapipe_model_maker.python.text.text_classifier import text_classifier_options
 from mediapipe.tasks.python.metadata.metadata_writers import metadata_writer
 from mediapipe.tasks.python.metadata.metadata_writers import text_classifier as text_classifier_writer
 
