@@ -21,7 +21,7 @@ package(default_visibility = ["//visibility:public"])
 mediapipe_jni_binary(
     name = "llm_inference_engine_jni",
     uses_explicit_exports = True,
-    deps = ["//mediapipe/tasks/java/com/google/mediapipe/tasks/genai/llminference/jni:llm"],
+    deps = [],
 )
 
 android_library(
