@@ -31,3 +31,12 @@ exports_files([
     "package.json",
     "yarn.lock",
 ])
+
+platform(
+    name = "x64_windows-clang-cl",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+        "@rules_cc//cc/private/toolchain:clang-cl",
+    ],
+)
