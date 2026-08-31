@@ -17,9 +17,9 @@ package com.google.mediapipe.tasks.vision.holisticlandmarker;
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
 import com.google.auto.value.AutoValue;
+import com.google.mediapipe.formats.proto.ClassificationProto.ClassificationList;
 import com.google.mediapipe.formats.proto.LandmarkProto.LandmarkList;
 import com.google.mediapipe.formats.proto.LandmarkProto.NormalizedLandmarkList;
-import com.google.mediapipe.formats.proto.ClassificationProto.ClassificationList;
 import com.google.mediapipe.framework.AndroidPacketGetter;
 import com.google.mediapipe.framework.MediaPipeException;
 import com.google.mediapipe.framework.Packet;
@@ -45,7 +45,6 @@ import com.google.mediapipe.tasks.vision.holisticlandmarker.proto.HolisticLandma
 import com.google.mediapipe.tasks.vision.posedetector.proto.PoseDetectorGraphOptionsProto.PoseDetectorGraphOptions;
 import com.google.mediapipe.tasks.vision.poselandmarker.proto.PoseLandmarksDetectorGraphOptionsProto.PoseLandmarksDetectorGraphOptions;
 import com.google.protobuf.Any;
-import com.google.protobuf.MessageLite;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -616,13 +615,11 @@ public final class HolisticLandmarker extends BaseVisionTaskApi {
           .setPoseDetectorGraphOptions(poseDetectorGraphOptions.build())
           .setPoseLandmarksDetectorGraphOptions(poseLandmarkerGraphOptions.build());
 
-      Any.Builder anyBuilder =
-          Any.newBuilder()
-              .setTypeUrl(
-                  "type.googleapis.com/mediapipe.tasks.vision.holistic_landmarker.proto.HolisticLandmarkerGraphOptions")
-              .setValue(holisticLandmarkerGraphOptions.build().toByteString());
-      // Cast to MessageLite.Builder to avoid the NoSuchMethodError
-      return (Any) ((MessageLite.Builder) anyBuilder).build();
+      return Any.newBuilder()
+          .setTypeUrl(
+              "type.googleapis.com/mediapipe.tasks.vision.holistic_landmarker.proto.HolisticLandmarkerGraphOptions")
+          .setValue(holisticLandmarkerGraphOptions.build().toByteString())
+          .build();
     }
   }
 

@@ -253,7 +253,8 @@ def mediapipe_tasks_core_aar(name, srcs, manifest, deps = []):
                }),
         manifest = manifest,
         deps = deps + [
-                   "//third_party:any_java_proto",
+                   # Android Tasks use lite-generated protos. Keep Any on the
+                   # same runtime to avoid incompatible method descriptors.
                    "@com_google_protobuf//:protobuf_javalite",
                    "//mediapipe/calculators/core:flow_limiter_calculator_java_proto_lite",
                    "//mediapipe/calculators/tensor:inference_calculator_java_proto_lite",
